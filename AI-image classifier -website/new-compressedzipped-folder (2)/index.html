@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Classification App - Home</title>
+    <style>
+        :root {
+            --bg-light: #f4f4f4;
+            --text-light: #333;
+            --button-bg-light: #007bff;
+            --button-hover-light: #0056b3;
+            --heading-light: #555;
+
+            --bg-dark: #1a202c;
+            --text-dark: #e2e8f0;
+            --button-bg-dark: #4a5568;
+            --button-hover-dark: #718096;
+            --heading-dark: #a0aec0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        body.light h1 {
+            color: var(--heading-light);
+        }
+
+        body.dark h1 {
+            color: var(--heading-dark);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        body.light button {
+            background-color: var(--button-bg-light);
+        }
+
+        body.light button:hover {
+            background-color: var(--button-hover-light);
+        }
+
+        body.dark button {
+            background-color: var(--button-bg-dark);
+        }
+
+        body.dark button:hover {
+            background-color: var(--button-hover-dark);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="light">
+    <button class="theme-toggle" aria-label="Toggle dark mode">🌓</button>
+    <div class="container">
+        <h1>Welcome to Image Classification App</h1>
+        <button onclick="startClassification()">Start Image Classification</button>
+        <button onclick="returnToClassification()" id="returnButton" style="display: none;">Return to Classification</button>
+    </div>
+
+    <script>
+        function startClassification() {
+            window.location.href = 'classification.html';
+        }
+
+        function returnToClassification() {
+            window.location.href = 'classification.html';
+        }
+
+        // Dark mode toggle functionality
+        const body = document.body;
+        const themeToggle = document.querySelector('.theme-toggle');
+
+        const getPreferredTheme = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                return savedTheme;
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        };
+
+        const applyTheme = (theme) => {
+            body.className = theme;
+            localStorage.setItem('theme', theme);
+        };
+
+        applyTheme(getPreferredTheme());
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = body.className === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+        });
+
+        // Check if user came from classification page
+        window.onload = function() {
+            if (document.referrer.includes('classification.html')) {
+                document.getElementById('returnButton').style.display = 'inline-block';
+            }
+        };
+    </script>
+</body>
+</html>
+

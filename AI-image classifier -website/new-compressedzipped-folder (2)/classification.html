@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teachable Machine Example with Dark Mode</title>
+    <style>
+        :root {
+            --bg-light: #f4f4f4;
+            --text-light: #333;
+            --container-bg-light: white;
+            --button-bg-light: #007bff;
+            --button-hover-light: #0056b3;
+            --heading-light: #555;
+            --footer-light: #777;
+            --card-bg-light: #ffffff;
+            --card-border-light: #e0e0e0;
+
+            --bg-dark: #1a202c;
+            --text-dark: #e2e8f0;
+            --container-bg-dark: #2d3748;
+            --button-bg-dark: #4a5568;
+            --button-hover-dark: #718096;
+            --heading-dark: #a0aec0;
+            --footer-dark: #a0aec0;
+            --card-bg-dark: #2d3748;
+            --card-border-dark: #4a5568;
+
+            --meter-red: #ff4d4d;
+            --meter-orange: #ffa500;
+            --meter-green: #4CAF50;
+
+            --object-color: #3498db;
+            --percentage-color: #e74c3c;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light {
+            background-color: var(--bg-light);
+            color: var(--text-light);
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        #container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg-light);
+            border: 1px solid var(--card-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, border-color 0.3s;
+            width: calc(50% - 10px);
+            box-sizing: border-box;
+        }
+
+        body.dark .card {
+            background-color: var(--card-bg-dark);
+            border-color: var(--card-border-dark);
+        }
+
+        #webcam-container {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        #webcam-container canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .meter {
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .meter-bar {
+            height: 20px;
+            width: 0;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        body.light button {
+            background-color: var(--button-bg-light);
+        }
+
+        body.light button:hover {
+            background-color: var(--button-hover-light);
+        }
+
+        body.dark button {
+            background-color: var(--button-bg-dark);
+        }
+
+        body.dark button:hover {
+            background-color: var(--button-hover-dark);
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            transition: color 0.3s;
+        }
+
+        body.light h1, body.light h2 {
+            color: var(--heading-light);
+        }
+
+        body.dark h1, body.dark h2 {
+            color: var(--heading-dark);
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            transition: color 0.3s;
+        }
+
+        body.light footer {
+            color: var(--footer-light);
+        }
+
+        body.dark footer {
+            color: var(--footer-dark);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .object-label {
+            color: var(--object-color);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .percentage {
+            color: var(--percentage-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            #container {
+                flex-direction: column;
+            }
+            .card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="light">
+    <button class="theme-toggle" aria-label="Toggle dark mode">🌓</button>
+    <h1>Image Classification</h1>
+    <div id="container">
+        <div class="card">
+            <h2>Camera Feed</h2>
+            <div id="webcam-container"></div>
+            <div>
+                <button onclick="init()">Start</button>
+                <button onclick="stopAndRedirect()">Stop and Return Home</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Detection Results</h2>
+            <div id="label-container"></div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; Activity sa CS Elective 3. All rights are reserved
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        // Replace with your actual Teachable Machine model URL
+        const URL = "https://teachablemachine.withgoogle.com/models/ElVVuzRLh/"; // *** IMPORTANT ***
+
+        let model, webcam, labelContainer, maxPredictions, running = false;
+
+        async function init() {
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                const flip = true;
+                webcam = new tmImage.Webcam(200, 200, flip);
+                await webcam.setup();
+                await webcam.play();
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                labelContainer = document.getElementById("label-container");
+                for (let i = 0; i < maxPredictions; i++) {
+                    const meterContainer = document.createElement("div");
+                    meterContainer.innerHTML = `
+                        <div class="object-label">${model.getClassLabels()[i]}</div>
+                        <div class="meter">
+                            <div class="meter-bar" id="meter-${i}"></div>
+                        </div>
+                        <div class="percentage" id="percentage-${i}">0%</div>
+                    `;
+                    labelContainer.appendChild(meterContainer);
+                }
+
+                running = true;
+                loop();
+
+            } catch (error) {
+                console.error("Error initializing:", error);
+                alert("An error occurred while initializing. Please check the console for details.");
+            }
+        }
+
+        function stop() {
+            try {
+                running = false;
+                if (webcam) {
+                    webcam.stop();
+                }
+                console.log("Classification stopped successfully.");
+            } catch (error) {
+                console.error("Error stopping classification:", error);
+                alert("An error occurred while stopping. Please check the console for details.");
+            }
+        }
+
+        function stopAndRedirect() {
+            stop();
+            window.location.href = 'index.html';
+        }
+
+        async function loop() {
+            if (running) {
+                webcam.update();
+                await predict();
+                window.requestAnimationFrame(loop);
+            }
+        }
+
+        async function predict() {
+            try {
+                const prediction = await model.predict(webcam.canvas);
+                for (let i = 0; i < maxPredictions; i++) {
+                    const probability = prediction[i].probability.toFixed(2);
+                    const percentage = (probability * 100).toFixed(0);
+                    const meterBar = document.getElementById(`meter-${i}`);
+                    meterBar.style.width = percentage + "%";
+                    document.getElementById(`percentage-${i}`).textContent = percentage + "%";
+                    
+                    // Set color based on percentage
+                    if (percentage <= 30) {
+                        meterBar.style.backgroundColor = 'var(--meter-red)';
+                    } else if (percentage <= 75) {
+                        meterBar.style.backgroundColor = 'var(--meter-orange)';
+                    } else {
+                        meterBar.style.backgroundColor = 'var(--meter-green)';
+                    }
+                }
+            } catch (error) {
+                console.error("Error during prediction:", error);
+                // Optionally, you can stop the classification if a prediction error occurs
+                // stop();
+                // alert("An error occurred during prediction. Classification has been stopped.");
+            }
+        }
+
+        // Dark mode toggle functionality
+        const body = document.body;
+        const themeToggle = document.querySelector('.theme-toggle');
+
+        const getPreferredTheme = () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                return savedTheme;
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        };
+
+        const applyTheme = (theme) => {
+            body.className = theme;
+            localStorage.setItem('theme', theme);
+        };
+
+        applyTheme(getPreferredTheme());
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = body.className === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+        });
+    </script>
+</body>
+</html>
+
